@@ -47,11 +47,11 @@ oc get appproject -n openshift-gitops
 oc describe appproject example-project -n openshift-gitops
 ```
 
-### 9.2 Configurar ApplicationSet
+### Configurar ApplicationSet
 
 Los ApplicationSets permiten crear y gestionar múltiples aplicaciones ArgoCD de forma automatizada.
 
-#### 9.2.1 ApplicationSet
+#### ApplicationSet
 
 1. Crear el archivo `applicationset.yaml`:
 
@@ -97,7 +97,7 @@ spec:
 oc apply -f applicationset.yaml
 ```
 
-### 9.3 Estructura del Repositorio GitOps
+### Estructura del Repositorio GitOps
 
 Para que funcione correctamente, el repositorio `https://github.com/example/camel-rest-status-gitops.git` debe tener una estructura como la siguiente:
 
@@ -123,9 +123,9 @@ camel-rest-status-gitops/
             └── patch-deployment.yaml   # Parches específicos para prod
 ```
 
-### 9.4 Verificación y Monitoreo
+### Verificación y Monitoreo
 
-#### 9.4.1 Verificar ApplicationSets
+#### Verificar ApplicationSets
 
 ```bash
 # Listar ApplicationSets
@@ -138,7 +138,7 @@ oc describe applicationset demo-appplicationset -n openshift-gitops
 oc get applications -n openshift-gitops -l argocd.argoproj.io/application-set-name=demo-appplicationset
 ```
 
-#### 9.4.2 Monitorear Aplicaciones Generadas
+#### Monitorear Aplicaciones Generadas
 
 ```bash
 # Ver estado de todas las aplicaciones
@@ -151,7 +151,7 @@ oc get applications -n openshift-gitops -l environment=dev
 argocd app list --project example-project
 ```
 
-### 9.5 Comandos Útiles para Gestión
+### Comandos Útiles para Gestión
 
 ```bash
 # Sincronizar todas las aplicaciones de un proyecto
