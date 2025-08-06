@@ -2,11 +2,7 @@
 
 - [Habilitacion ArgoCD](doc/habilitar_argocd.md)
 - [Configuración de Proyectos y ApplicationSets](#configuración-de-proyectos-y-applicationsets)
-- [Solución de Problemas](#solución-de-problemas)
-- [Conclusión](#conclusión)
 - [Referencias](#referencias)
-
-
 
 ## Configuración de Proyectos y ApplicationSets
 
