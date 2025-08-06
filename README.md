@@ -128,6 +128,132 @@ spec:
       g, system:cluster-admins, role:admin
     scopes: '[groups]'
 ```
+```yaml
+apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: openshift-gitops
+  namespace: openshift-gitops
+spec:
+  server:
+    autoscale:
+      enabled: false
+    grpc:
+      ingress:
+        enabled: false
+    ingress:
+      enabled: false
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 125m
+        memory: 128Mi
+    route:
+      enabled: true
+    service:
+      type: ''
+  grafana:
+    enabled: false
+    ingress:
+      enabled: false
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 250m
+        memory: 128Mi
+    route:
+      enabled: false
+  monitoring:
+    enabled: false
+  notifications:
+    enabled: false
+  prometheus:
+    enabled: false
+    ingress:
+      enabled: false
+    route:
+      enabled: false
+  initialSSHKnownHosts: {}
+  sso:
+    dex:
+      openShiftOAuth: true
+      resources:
+        limits:
+          cpu: 500m
+          memory: 256Mi
+        requests:
+          cpu: 250m
+          memory: 128Mi
+    provider: dex
+  applicationSet:
+    resources:
+      limits:
+        cpu: '2'
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+    webhookServer:
+      ingress:
+        enabled: false
+      route:
+        enabled: false
+  rbac:
+    defaultPolicy: ''
+    policy: |
+      g, system:cluster-admins, role:admin
+      g, cluster-admins, role:admin
+    scopes: '[groups]'
+  repo:
+    resources:
+      limits:
+        cpu: '1'
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+  resourceExclusions: |
+    - apiGroups:
+      - tekton.dev
+      clusters:
+      - '*'
+      kinds:
+      - TaskRun
+      - PipelineRun
+  ha:
+    enabled: false
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 250m
+        memory: 128Mi
+  tls:
+    ca: {}
+  redis:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 250m
+        memory: 128Mi
+  controller:
+    processors: {}
+    resources:
+      limits:
+        cpu: '2'
+        memory: 2Gi
+      requests:
+        cpu: 250m
+        memory: 1Gi
+    sharding: {}
+```
 
 2. Aplicar la configuración:
 
@@ -362,79 +488,30 @@ g, cn=developers,ou=groups,dc=empresa,dc=com, role:developer
 
 Los proyectos en ArgoCD proporcionan una forma de agrupar aplicaciones y definir políticas específicas.
 
-1. Crear el archivo `example-project.yaml`:
+1. Crear el archivo `appproject.yaml`:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: example-project
+  name: demo-appproject
   namespace: openshift-gitops
 spec:
-  description: "Proyecto de ejemplo para aplicaciones GitOps"
-  
-  # Repositorios permitidos
-  sourceRepos:
-  - 'https://github.com/example/examplerepo-gitops.git'
-  - 'https://github.com/example/*'
-  
-  # Clusters de destino permitidos
-  destinations:
-  - namespace: 'example-*'
-    server: 'https://kubernetes.default.svc'
-  - namespace: 'dev'
-    server: 'https://kubernetes.default.svc'
-  - namespace: 'staging'
-    server: 'https://kubernetes.default.svc'
-  
-  # Recursos permitidos
   clusterResourceWhitelist:
-  - group: ''
-    kind: Namespace
-  - group: 'rbac.authorization.k8s.io'
-    kind: ClusterRole
-  - group: 'rbac.authorization.k8s.io'
-    kind: ClusterRoleBinding
-  
-  # Recursos de namespace permitidos
-  namespaceResourceWhitelist:
-  - group: ''
-    kind: ConfigMap
-  - group: ''
-    kind: Secret
-  - group: ''
-    kind: Service
-  - group: 'apps'
-    kind: Deployment
-  - group: 'apps'
-    kind: StatefulSet
-  - group: 'route.openshift.io'
-    kind: Route
-  
-  # Roles del proyecto
-  roles:
-  - name: developer
-    description: "Rol para desarrolladores"
-    policies:
-    - p, proj:example-project:developer, applications, get, example-project/*, allow
-    - p, proj:example-project:developer, applications, sync, example-project/*, allow
-    - p, proj:example-project:developer, applications, action, example-project/*, allow
-    groups:
-    - example-developers
-  
-  - name: admin
-    description: "Rol de administrador del proyecto"
-    policies:
-    - p, proj:example-project:admin, applications, *, example-project/*, allow
-    - p, proj:example-project:admin, repositories, *, *, allow
-    groups:
-    - example-admins
+    - group: '*'
+      kind: '*'
+  destinations:
+    - namespace: '*'
+      server: '*'
+  sourceRepos:
+    - '*'
+
 ```
 
 2. Aplicar el proyecto:
 
 ```bash
-oc apply -f example-project.yaml
+oc apply -f demo-appproject.yaml
 ```
 
 3. Verificar la creación del proyecto:
@@ -450,144 +527,74 @@ Los ApplicationSets permiten crear y gestionar múltiples aplicaciones ArgoCD de
 
 #### 9.2.1 ApplicationSet Básico
 
-1. Crear el archivo `example-applicationset.yaml`:
+1. Crear el archivo `applicationset.yaml`:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: example-apps
+  name: demo-appplicationset
   namespace: openshift-gitops
 spec:
   generators:
-  - git:
-      repoURL: https://github.com/example/examplerepo-gitops.git
-      revision: HEAD
-      directories:
-      - path: environments/*
-  
+    - list:
+        elements:
+          - name: dev
+            namespace: camel-dev
+            path: kustomize/overlays/dev
+          - name: prod
+            namespace: camel-prod
+            path: kustomize/overlays/prod
   template:
     metadata:
-      name: '{{path.basename}}-app'
-      labels:
-        environment: '{{path.basename}}'
+      name: 'camel-rest-status-{{name}}'
     spec:
-      project: example-project
+      project: demo-appproject
       source:
-        repoURL: https://github.com/example/examplerepo-gitops.git
-        targetRevision: HEAD
+        repoURL: https://github.com/mcaballol/camel-rest-status-gitops.git  # Cambia esto a tu repo real
+        targetRevision: main
         path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}'
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-        - CreateNamespace=true
-        - PrunePropagationPolicy=foreground
-        - PruneLast=true
-```
-
-#### 9.2.2 ApplicationSet con Múltiples Entornos
-
-1. Crear un ApplicationSet más avanzado `multi-env-applicationset.yaml`:
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: multi-env-example
-  namespace: openshift-gitops
-spec:
-  generators:
-  - list:
-      elements:
-      - cluster: dev
-        url: https://kubernetes.default.svc
-        namespace: example-dev
-        branch: develop
-      - cluster: staging
-        url: https://kubernetes.default.svc
-        namespace: example-staging
-        branch: main
-      - cluster: prod
-        url: https://kubernetes.default.svc
-        namespace: example-prod
-        branch: main
-  
-  template:
-    metadata:
-      name: 'example-{{cluster}}'
-      labels:
-        environment: '{{cluster}}'
-    spec:
-      project: example-project
-      source:
-        repoURL: https://github.com/example/examplerepo-gitops.git
-        targetRevision: '{{branch}}'
-        path: 'overlays/{{cluster}}'
-      destination:
-        server: '{{url}}'
         namespace: '{{namespace}}'
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
         syncOptions:
-        - CreateNamespace=true
-        retry:
-          limit: 5
-          backoff:
-            duration: 5s
-            factor: 2
-            maxDuration: 3m
+          - CreateNamespace=true
 ```
 
 2. Aplicar el ApplicationSet:
 
 ```bash
-oc apply -f example-applicationset.yaml
-# o para el multi-entorno
-oc apply -f multi-env-applicationset.yaml
+oc apply -f applicationset.yaml
 ```
 
-### 9.3 Estructura del Repositorio GitOps de Ejemplo
+### 9.3 Estructura del Repositorio GitOps
 
-Para que funcione correctamente, el repositorio `https://github.com/example/examplerepo-gitops.git` debe tener una estructura como la siguiente:
+Para que funcione correctamente, el repositorio `https://github.com/example/camel-rest-status-gitops.git` debe tener una estructura como la siguiente:
 
 ```
-examplerepo-gitops/
-├── README.md
-├── environments/
-│   ├── dev/
-│   │   ├── kustomization.yaml
-│   │   └── app-config.yaml
-│   ├── staging/
-│   │   ├── kustomization.yaml
-│   │   └── app-config.yaml
-│   └── prod/
-│       ├── kustomization.yaml
-│       └── app-config.yaml
-├── overlays/
-│   ├── dev/
-│   │   ├── kustomization.yaml
-│   │   ├── deployment-patch.yaml
-│   │   └── configmap.yaml
-│   ├── staging/
-│   │   ├── kustomization.yaml
-│   │   ├── deployment-patch.yaml
-│   │   └── configmap.yaml
-│   └── prod/
-│       ├── kustomization.yaml
-│       ├── deployment-patch.yaml
-│       └── configmap.yaml
-└── base/
-    ├── kustomization.yaml
-    ├── deployment.yaml
-    ├── service.yaml
-    └── configmap.yaml
+camel-rest-status-gitops/
+camel-rest-status-gitops/
+├── README.md                           # Documentación principal (717 líneas)
+├── .git/                               # Control de versiones Git
+└── kustomize/                          # Configuración de Kustomize
+    ├── applicationset.yaml             # Definición del ApplicationSet de ArgoCD
+    ├── appproject.yaml                 # Configuración del proyecto de ArgoCD
+    ├── base/                           # Configuración base de Kubernetes
+    │   ├── kustomization.yaml          # Archivo de configuración de Kustomize base
+    │   ├── deployment.yaml             # Definición del Deployment
+    │   ├── service.yaml                # Definición del Service
+    │   └── ingress.yaml                # Definición del Ingress
+    └── overlays/                       # Configuraciones específicas por entorno
+        ├── dev/                        # Configuración para desarrollo
+        │   ├── kustomization.yaml      # Kustomize para dev
+        │   └── patch-deployment.yaml   # Parches específicos para dev
+        └── prod/                       # Configuración para producción
+            ├── kustomization.yaml      # Kustomize para prod
+            └── patch-deployment.yaml   # Parches específicos para prod
 ```
 
 ### 9.4 Verificación y Monitoreo
@@ -599,10 +606,10 @@ examplerepo-gitops/
 oc get applicationset -n openshift-gitops
 
 # Ver detalles del ApplicationSet
-oc describe applicationset example-apps -n openshift-gitops
+oc describe applicationset demo-appplicationset -n openshift-gitops
 
 # Ver aplicaciones generadas
-oc get applications -n openshift-gitops -l argocd.argoproj.io/application-set-name=example-apps
+oc get applications -n openshift-gitops -l argocd.argoproj.io/application-set-name=demo-appplicationset
 ```
 
 #### 9.4.2 Monitorear Aplicaciones Generadas
