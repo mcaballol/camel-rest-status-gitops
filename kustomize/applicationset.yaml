@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: demo-appplicationset
+  namespace: openshift-gitops
+spec:
+  generators:
+    - list:
+        elements:
+          - name: dev
+            namespace: camel-dev
+            path: kustomize/overlays/dev
+          - name: prod
+            namespace: camel-prod
+            path: kustomize/overlays/prod
+  template:
+    metadata:
+      name: 'camel-rest-status-{{name}}'
+    spec:
+      project: demo-appproject
+      source:
+        repoURL: https://github.com/mcaballol/camel-rest-status-gitops.git  # Cambia esto a tu repo real
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

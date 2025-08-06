@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: camel-rest-status
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: camel-rest-status
+        env:
+        - name: CUSTOM_MESSAGE
+          value: "Mensaje desde entorno DEV"
