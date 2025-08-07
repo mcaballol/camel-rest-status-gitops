@@ -109,7 +109,7 @@ camel-rest-status-gitops/
     │   ├── kustomization.yaml          # Archivo de configuración de Kustomize base
     │   ├── deployment.yaml             # Definición del Deployment
     │   ├── service.yaml                # Definición del Service
-    │   └── ingress.yaml                # Definición del Ingress
+    │   └── route.yaml                # Definición de la ruta
     └── overlays/                       # Configuraciones específicas por entorno
         ├── dev/                        # Configuración para desarrollo
         │   ├── kustomization.yaml      # Kustomize para dev
