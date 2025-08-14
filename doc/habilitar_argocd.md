@@ -100,6 +100,12 @@ oc adm policy add-cluster-role-to-user cluster-admin \
   system:serviceaccount:openshift-gitops:openshift-gitops-argocd-application-controller
 ```
 
+2. crear grupo de administradores de ArgoCD
+```bash
+oc adm groups add-users gitops-admins
+oc adm groups add-users gitops-admins <user>
+```
+
 ## Paso 3: Despliegue de la Instancia ArgoCD
 
 ### 3.1 Crear la Instancia ArgoCD
@@ -131,6 +137,7 @@ spec:
     policy: |
       g, system:cluster-admins, role:admin
       g, cluster-admins, role:admin
+      g, gitops-admins, role:admin
     scopes: '[groups]'
 ```
 Aplicar la configuración:
