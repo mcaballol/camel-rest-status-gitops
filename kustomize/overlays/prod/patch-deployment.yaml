@@ -10,4 +10,4 @@ spec:
       - name: camel-rest-status
         env:
         - name: CUSTOM_MESSAGE
-          value: "Mensaje desde entorno PROD"
+          value: "Mensaje desde entorno PRO , otro mensaje"
